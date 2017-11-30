@@ -1487,7 +1487,7 @@ void J1939_TP_Poll()
 * @return    RC_CANNOTTRANSMIT 不能发送，因为TP协议已经建立虚拟链接，并且未断开
 * @note      TP协议的发送函数
 */
-j1939_int8_t J1939_TP_TX_Message(j1939_uint32_t PGN,j1939_uint8_t SA,j1939_int8_t *data,j1939_uint16_t data_num, CAN_NODE  _Can_Node)
+j1939_int8_t J1939_TP_TX_Message(j1939_uint32_t PGN,j1939_uint8_t DA,j1939_int8_t *data,j1939_uint16_t data_num, CAN_NODE  _Can_Node)
 {
 	j1939_uint16_t _byte_count =0;
 	/*取得发送权限*/
@@ -1501,7 +1501,7 @@ j1939_int8_t J1939_TP_TX_Message(j1939_uint32_t PGN,j1939_uint8_t SA,j1939_int8_
 	}
 
 	TP_TX_MSG.tp_tx_msg.PGN = PGN;
-	TP_TX_MSG.tp_tx_msg.SA = SA;
+	TP_TX_MSG.tp_tx_msg.SA = DA;
 	TP_TX_MSG.tp_tx_msg.byte_count = data_num;
 	for(_byte_count = 0;_byte_count < data_num;_byte_count++)
 	{
@@ -1570,3 +1570,54 @@ j1939_int8_t J1939_TP_RX_Message(j1939_int8_t *data,j1939_uint16_t data_num, CAN
 	return RC_SUCCESS;
 }
 #endif
+/**
+* @param[in] data	读取数据的缓存
+* @param[in] data_num  读取数据的缓存大小
+* @param[in] _Can_Node	读取数据的缓存
+* @param[in] SA	     读取数据的来源地址
+* @return  RC_CANNOTRECEIVE 不能接受，TP协议正在接受数据中
+* @return  RC_SUCCESS		读取数据成功
+* @note TP的接受函数 , 接受缓存的大小必须大于接受数据的大小，建议初始化缓存大小用  J1939_TP_MAX_MESSAGE_LENGTH\n
+请正确带入 缓存区的大小，参数错误程序运行有风险
+*/
+j1939_int8_t 	J1939_TP_RX_Message_ex(j1939_int8_t *data, j1939_uint16_t data_num, CAN_NODE  _Can_Node, j1939_int8_t SA)
+{
+	j1939_uint16_t _a = 0;
+	/*判断是否能读取数据*/
+	if (J1939_TP_Flags_t.state == J1939_TP_NULL && TP_RX_MSG.tp_rx_msg.PGN != 0)
+	{
+		J1939_TP_Flags_t.state = J1939_TP_OSBUSY;
+	}
+	else
+	{
+		return RC_CANNOTRECEIVE;//不能接受，TP协议正在接受数据中,或没有数据
+	}
+	//判断是不是要读取那一路CAN数据
+	if (_Can_Node != J1939_TP_Flags_t.TP_RX_CAN_NODE)
+	{
+		return RC_CANNOTRECEIVE;
+	}
+	//判断数据缓存够不够
+	if (data_num < TP_RX_MSG.tp_rx_msg.byte_count)
+	{
+		return RC_CANNOTRECEIVE;//不能接受，缓存区太小
+	}
+
+	for (_a = 0; _a < data_num; _a++)
+	{
+		data[_a] = TP_RX_MSG.tp_rx_msg.data[_a];
+	}
+	//获取SA地址
+	SA  =  TP_RX_MSG.tp_rx_msg.SA;
+	/*丢弃读取过的数据*/
+	TP_RX_MSG.tp_rx_msg.byte_count = 0u;
+	TP_RX_MSG.tp_rx_msg.PGN = 0;
+
+	/*释放TP接管权限*/
+	if (J1939_TP_Flags_t.state == J1939_TP_OSBUSY)
+	{
+		J1939_TP_Flags_t.state = J1939_TP_NULL;
+	}
+
+	return RC_SUCCESS;
+}

@@ -307,11 +307,11 @@ extern void			    J1939_ISR( void );
 //扫描入口
 extern void 			J1939_Poll( j1939_uint32_t ElapsedTime );
 //TP协议的发送函数
-extern j1939_int8_t 	J1939_TP_TX_Message(j1939_uint32_t PGN, j1939_uint8_t SA, j1939_int8_t *data, j1939_uint16_t data_num, CAN_NODE  _Can_Node);
+extern j1939_int8_t 	J1939_TP_TX_Message(j1939_uint32_t PGN, j1939_uint8_t DA, j1939_int8_t *data, j1939_uint16_t data_num, CAN_NODE  _Can_Node);
 //TP协议的接受函数
 extern j1939_int8_t 	J1939_TP_RX_Message(j1939_int8_t *data,j1939_uint16_t data_num, CAN_NODE  _Can_Node);
 //TP协议的接受函数--extend
-extern j1939_int8_t 	J1939_TP_RX_Message_ex(j1939_int8_t *data,j1939_uint16_t data_num, CAN_NODE  _Can_Node);
+extern j1939_int8_t 	J1939_TP_RX_Message_ex(j1939_int8_t *data, j1939_uint16_t data_num, CAN_NODE  _Can_Node, j1939_int8_t SA);
 //TP轮询函数
 void J1939_TP_Poll();
 #ifdef  __J1939_SOURCE 
